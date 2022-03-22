@@ -522,8 +522,12 @@ def print_contributions(pd_tpa,considered_state, tot_states):
     input: dataframe, eg. tpa.csv
     h_bar = 6.6*10**(-16) # unit: ev.s, here h_bar = 1--atomic units
     output: print the sos expression and all cotributions from each intemediate state
+            and return a list of dominant intermediate states
     """
     lines = 50*'-'
+    domin_is = []
+    sigma_r = []
+    sigma_is = []
     M = np.zeros((3,3))
     # =============================================================================
     # 1.generate 9 combinations from [0,1,2] for M_a,b
@@ -558,7 +562,15 @@ def print_contributions(pd_tpa,considered_state, tot_states):
         sigma = get_sigma(M_os)
         print("If only consider the " + str(j) + "th intermediate stata (Three-states model), the final cross section:")
         print(sigma)
+        sigma_r.append(sigma)
         print("\n")
+        if sigma >= sigma_sos*0.06:
+            domin_is.append(str(j))
+            sigma_is.append(sigma)
+    print(lines)
+    print("The dominant intermediate states are: \n",domin_is)
+    print("\n")
+    return domin_is,sigma_is,sigma_r
     #    sigma_sum += sigma
     #    print("Sum of previous states:  " + str(sigma_sum))
     #    print("\n")
@@ -608,6 +620,7 @@ def print_contributions_entangled(pd_tpa,T_e,considered_state, tot_states):
     #    print("Sum of previous states:  " + str(sigma_sum))
     #    print("\n")
     
+
 def heatmap(data, row_labels, col_labels, ax=None,
             cbar_kw={}, cbarlabel="", **kwargs):
     """
@@ -643,9 +656,11 @@ def heatmap(data, row_labels, col_labels, ax=None,
     cbar.ax.set_ylabel(cbarlabel, rotation=-90, va="bottom")
 
     # Show all ticks and label them with the respective list entries.
-    ax.set_xticks(np.arange(data.shape[1]), labels=col_labels)
+    ax.set_xticks(np.arange(data.shape[1]))#, labels=col_labels)
+    ax.set_xticklabels(col_labels)
     ax.set_xlabel(r"$|k\rangle$")
-    ax.set_yticks(np.arange(data.shape[0]), labels=row_labels)
+    ax.set_yticks(np.arange(data.shape[0]))#, labels=row_labels)
+    ax.set_yticklabels(row_labels)
     ax.set_ylabel(r"$|f\rangle$")
     # Let the horizontal axes labeling appear on top.
     ax.tick_params(top=True, bottom=False,
@@ -657,8 +672,8 @@ def heatmap(data, row_labels, col_labels, ax=None,
     ax.grid(visible=None)
 
     # Turn spines off and create white grid.
-    ax.spines[:].set_visible(False)
-
+    for key,spine in ax.spines.items():
+        spine.set_visible(False)
     ax.set_xticks(np.arange(data.shape[1]+1)-.5, minor=True)
     ax.set_yticks(np.arange(data.shape[0]+1)-.5, minor=True)
     ax.grid(which="minor", color="w", linestyle='-', linewidth=1)
@@ -687,4 +702,5 @@ def heatmap_IS(pd_tpa,tot_states):
     y = ["{}".format(i) for i in range(1,tot_states+1)]
     #print(y)
     im, _ = heatmap(data,y,x,vmin=0,cmap="magma_r",cbarlabel="intermediate TPA contribution (a.u.)")
+    plt.show()
     #annotate_heatmap(im, valfmt="{x:d}", size=7, threshold=20,textcolors=("red", "white"))

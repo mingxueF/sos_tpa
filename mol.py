@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 from itertools import product
 import matplotlib.pyplot as plt
 from scipy.stats import norm
-import statistics
 
 plt.rcParams.update({
     "font.family": "serif",
@@ -35,6 +34,7 @@ mpl.style.use('seaborn')
 def converter(instr):
      # when datafram is saved to csv, numpy array becomes string
     return np.fromstring(instr[1:-1],sep =' ') 
+
 
 def etpa_time(T_e,pd_tpa,considered_state,tot_states,polarization = "parallel"):
     """
@@ -58,7 +58,7 @@ def etpa_time(T_e,pd_tpa,considered_state,tot_states,polarization = "parallel"):
     print('finished the last one:',sigma_entangled[-1])
     return sigma_entangled
 
-def parse_pdTPA(root,system,iso,basis=""):
+def parse_tpa(root,system,iso,basis=""):
     path = os.path.join(root,system,basis,iso,'tpa.csv')
     pd_path = pd.read_csv(path,converters={'Transition dipole moment':converter,\
                                            'dipole moment':converter},index_col = 'Excited state')
@@ -68,4 +68,30 @@ def parse_pdTPA(root,system,iso,basis=""):
 root = os.getcwd()
 polarization = "parallel"
 T_e = np.arange(0.,100.,0.05)
-pd_tpa_c4h4n2_c2v_10 = read_tpa(os.path.join(root,'c4h4n2-c2v','10es'))
+path = os.path.join(root,'1e')
+pd_iso_1e = parse_tpa(root,'1e','iso')#,'tpa.csv')
+pd_sup_1e = parse_tpa(root,'1e','sup')#,'tpa.csv')
+# =============================================================================
+# get the dominant intermediate states
+domi_iso = print_contributions(pd_iso_1e,considered_state=8, tot_states=10)
+domi_sup = print_contributions(pd_sup_1e,considered_state=8, tot_states=10)
+# =============================================================================
+# =============================================================================
+# Have a look at intermediate states contribution
+#heatmap_IS(pd_iso_1e,tot_states=10)
+# =============================================================================
+# check the etpa cross section
+#sigma_iso = etpa_time(T_e,pd_iso_1e,considered_state=8,tot_states=10)
+#sigma_sup = etpa_time(T_e,pd_sup_1e,considered_state=8,tot_states=10)
+## =============================================================================
+## plot it
+#fig = plt.figure()  
+#ax1 = fig.add_subplot(211)
+#plt.yscale("log")  
+#plt.plot(T_e, sigma_iso,label='iso-s8')
+# #ax1.set_ylim(bottom=1)
+#plt.legend()
+#ax2 = fig.add_subplot(212,sharey=ax1)#,sharey=ax1)
+#plt.yscale("log")  
+#plt.plot(T_e, sigma_sup,color='C1',label='sup-s8')
+#plt.legend()

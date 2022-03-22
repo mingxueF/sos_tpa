@@ -32,6 +32,32 @@ plt.rcParams.update({
 mpl.style.use('seaborn')
 
 # =============================================================================
+# add subplots in the figure for the comparison
+#fig = plt.figure()  
+#ax1 = fig.add_subplot(221)
+#plt.yscale("log")  
+#plt.plot(T_e, sigma_c2h4_3h2o_A,label='c2h4-parallel')
+#plt.legend()
+#ax2 = fig.add_subplot(222,sharey=ax1)#,sharey=ax1)
+#plt.yscale("log")  
+#plt.plot(T_e, sigma_c2h4_3h2o_AB,color='C2',label='c2h4-3h2o-parallel')
+#plt.legend()
+#ax3 = fig.add_subplot(223,sharey=ax1)#,sharey=ax1)
+#plt.yscale("log")  
+#plt.plot(T_e, sigma_c2h4_5h2o_A,label='c2h4-parallel')
+#plt.legend()
+#ax4 = fig.add_subplot(224,sharey=ax1)#,sharey=ax1)
+#plt.yscale("log")  
+#plt.plot(T_e, sigma_c2h4_5h2o_AB,color='C2',label='c2h4-5h2o-parallel')
+#plt.legend()
+## Set common labels
+#fig.text(0.5, 0.04, r"$T_e$ (fs)", fontsize =12,ha='center', va='center')
+#fig.text(0.06, 0.5, "ETPA cross section (a.u.)",fontsize =12, ha='center', va='center', rotation='vertical') 
+## to set the top title
+#fig.text(0.45, 0.95, r"$C_2H_4$\_$H_2O$", fontsize =15 , va='center')
+# =============================================================================
+
+# =============================================================================
 # Plot normalization distribution
 # =============================================================================
 #fig = plt.figure()
