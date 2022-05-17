@@ -61,41 +61,31 @@ def find_locmax(sigma,height=1000,distance=200):
 root = os.getcwd()
 polarization = "parallel"
 T_e = np.arange(0,100.,0.05)
-#pd_iso = parse_tpa(os.path.join(root,'9a','iso'))
-#pd_sup = parse_tpa(os.path.join(root,'9a','sup'))
-pd_iso = parse_tpa(os.path.join(root,'c10h8'))
-pd_sup = parse_tpa(os.path.join(root,'c10h7cl'))
+pd_iso = parse_tpa(os.path.join(root,'9a','iso'))
+pd_sup = parse_tpa(os.path.join(root,'9a','ME'))
 #pd_iso = parse_tpa(os.path.join(root,'c4h4n2-d2h-h2o','iso'))
 #pd_sup = parse_tpa(os.path.join('c4h4n2-d2h-h2o','20es'))
 domi = True
-s_iso = 8
-s_sup = 8
-#s_iso = 5
-#s_sup = 4
-#s_iso = 10
-#s_sup = 11
-delta = 18.3
+s_iso = 5
+s_sup = 4
+delta = 1.24
 tot_states =10
 # =============================================================================
 # get the dominant intermediate states
-#domi_iso = print_contributions(pd_iso,considered_state=s_iso, tot_states=tot_states)
-#domi_sup = print_contributions(pd_sup,considered_state=s_sup, tot_states=tot_states)
-#get_weight(pd_sup,considered_state1=17,considered_state2=17,target_state=11)
-#get_weight(pd_sup,considered_state1=16,considered_state2=16,target_state=11)
-#get_weight(pd_sup,considered_state1=6,considered_state2=6,target_state=4)
-#get_weight(pd_sup,considered_state1=4,considered_state2=6,target_state=4)
+domi_iso = print_contributions(pd_iso,considered_state=s_iso, tot_states=tot_states)
+domi_sup = print_contributions(pd_sup,considered_state=s_sup, tot_states=tot_states)
 # =============================================================================
 # =============================================================================
 # Have a look at intermediate states contribution
 #exc_ladder(pd_iso,pd_sup,s_iso=s_iso,s_sup=s_sup,tot_states=tot_states,delta=delta,dominant=domi)
 # =============================================================================
 # check the etpa cross section
-sigma_iso = etpa_time(T_e,pd_iso,considered_state=s_iso,tot_states=tot_states)
+#sigma_iso = etpa_time(T_e,pd_iso,considered_state=s_iso,tot_states=tot_states)
 #find_locmax(sigma_iso,height=700,distance=100)
-#print("the maximum etpa cross section for iso: \n",max(sigma_iso))
-sigma_sup = etpa_time(T_e,pd_sup,considered_state=s_sup,tot_states=tot_states)
+print("the maximum etpa cross section for iso: \n",max(sigma_iso))
+#sigma_sup = etpa_time(T_e,pd_sup,considered_state=s_sup,tot_states=tot_states)
 #find_locmax(sigma_sup,height=400,distance=500)
-#print("the maximum etpa cross section for sup: \n",max(sigma_sup))
+print("the maximum etpa cross section for sup: \n",max(sigma_sup))
 ## =============================================================================
 ### plot it
 #print(normalized(sigma_iso))
@@ -104,12 +94,12 @@ fig = plt.figure()
 gs = gridspec.GridSpec(2,3)  
 ax1 = fig.add_subplot(gs[0,:2])
 plt.yscale("log")  
-plt.plot(T_e, sigma_iso,label='naphthalene')
+plt.plot(T_e, sigma_iso,label='chromophore')
  #ax1.set_ylim(bottom=1)
 plt.legend(loc='lower right')
-ax2 = fig.add_subplot(gs[1,:2],sharey=ax1)
+ax2 = fig.add_subplot(gs[1,:2])#,sharey=ax1)
 plt.yscale("log")  
-plt.plot(T_e, sigma_sup,color='C2',label='1-chloronaphthalene')
+plt.plot(T_e, sigma_sup,color='C2',label='FDET (frozen B)')
 plt.legend(loc='lower right')
 ax3 = fig.add_subplot(gs[:,2])
 exc_ladder(pd_iso,pd_sup,s_iso=s_iso,s_sup=s_sup,tot_states=tot_states,delta=delta,title=" ",dominant=domi)

@@ -68,19 +68,22 @@ def read_tpa(path):
                      tpa['Total dipole'].append(tot_dipole)
                      #tpa['Transition amplitudes'].append(ex_amp.set_index('weight'))  
                 if "Transition from excited state" in line:
-                    ex_num_start = line.split()[4]
-                    ex_num_end = line.split()[8]
-                    ex_energy = es.exc_energies(i+3,rl)
-                    ex_osi = es.osc_strength(i+4,rl)
-                    ex_transDip = es.transition_dipole(i+5,rl)
-                    tpa["Excited state"].append(ex_num_start+'->'+ex_num_end)
-                    tpa['Excitation energy'].append(ex_energy)
-                    tpa['Oscillator strength'].append(round(ex_osi,3))
-                    tpa['TPA cross section(sos)'].append("-")
-                    tpa['TPA cross section(dI)'].append("-")
-                    tpa['Transition dipole moment'].append(ex_transDip)
-                    tpa['dipole moment'].append("-")
-                    tpa['Total dipole'].append("-")
+                    try:
+                        ex_num_start = line.split()[4]
+                        ex_num_end = line.split()[8]
+                        ex_energy = es.exc_energies(i+3,rl)
+                        ex_osi = es.osc_strength(i+4,rl)
+                        ex_transDip = es.transition_dipole(i+5,rl)
+                        tpa["Excited state"].append(ex_num_start+'->'+ex_num_end)
+                        tpa['Excitation energy'].append(ex_energy)
+                        tpa['Oscillator strength'].append(round(ex_osi,3))
+                        tpa['TPA cross section(sos)'].append("-")
+                        tpa['TPA cross section(dI)'].append("-")
+                        tpa['Transition dipole moment'].append(ex_transDip)
+                        tpa['dipole moment'].append("-")
+                        tpa['Total dipole'].append("-")
+                    except IndexError:
+                        pass
         pd_tpa = pd.DataFrame(tpa).set_index('Excited state')
         pd_tpa.to_csv(os.path.join(path,'tpa.csv'))
         print("Saved tpa.csv in File!")
@@ -245,7 +248,7 @@ def get_M_sos(Cart_turple,pd_tpa,M,considered_state, tot_state):
     #print(M)
     return M
 
-def get_M_sos_entangled(Cart_turple,pd_tpa,M,T_e,considered_state, tot_state):
+def get_M_sos_entangled(Cart_turple,pd_tpa,M,T_e,considered_state, tot_state,exclude_state=None):
     """
     The SOS expression using fluctuation operator for entangled photons.
     Cart_turple: turple type eg. (0,0)         
@@ -256,24 +259,45 @@ def get_M_sos_entangled(Cart_turple,pd_tpa,M,T_e,considered_state, tot_state):
     a, b = Cart_turple
     E_1 = pd_tpa.loc[str(considered_state),'Excitation energy']/2
     tot_state += 1
-    for k in range(1,tot_state):
-        E_k = pd_tpa.loc[str(k),'Excitation energy']
-        phase = T_e*(E_k-E_1)/27.211/2
-        if k < considered_state:
-            M[a][b] += (pd_tpa.loc[str(k),'Transition dipole moment'][a]\
-                 *pd_tpa.loc[str(k)+'->'+str(considered_state)+':','Transition dipole moment'][b]\
-                 + pd_tpa.loc[str(k)+'->'+str(considered_state)+':','Transition dipole moment'][a]\
-                 *pd_tpa.loc[str(k),'Transition dipole moment'][b])*(2*np.sin(phase)*np.exp(1j*phase))/(E_k-E_1)*27.211
-        elif k > considered_state:
-            M[a][b] += (pd_tpa.loc[str(k),'Transition dipole moment'][a]\
-                 *pd_tpa.loc[str(considered_state) + '->'+str(k)+':','Transition dipole moment'][b]\
-                 + pd_tpa.loc[str(considered_state) + '->'+str(k)+':','Transition dipole moment'][a]\
-                 *pd_tpa.loc[str(k),'Transition dipole moment'][b])*(2*np.sin(phase)*np.exp(1j*phase))/(E_k-E_1)*27.211
-        else:
-            M[a][b] += (pd_tpa.loc[str(k),'Transition dipole moment'][a]\
-                 *(pd_tpa.loc[str(considered_state),'dipole moment'][b]-pd_tpa.loc['0','dipole moment'][b])\
-                 + (pd_tpa.loc[str(considered_state),'dipole moment'][a]-pd_tpa.loc['0','dipole moment'][a])\
-                 *pd_tpa.loc[str(k),'Transition dipole moment'][b])*(2*np.sin(phase)*np.exp(1j*phase))/(E_k-E_1)*27.21    
+    if not exclude_state:
+        for k in range(1,tot_state):
+            E_k = pd_tpa.loc[str(k),'Excitation energy']
+            phase = T_e*(E_k-E_1)/27.211/2
+            if k < considered_state:
+                M[a][b] += (pd_tpa.loc[str(k),'Transition dipole moment'][a]\
+                     *pd_tpa.loc[str(k)+'->'+str(considered_state)+':','Transition dipole moment'][b]\
+                     + pd_tpa.loc[str(k)+'->'+str(considered_state)+':','Transition dipole moment'][a]\
+                     *pd_tpa.loc[str(k),'Transition dipole moment'][b])*(2*np.sin(phase)*np.exp(1j*phase))/(E_k-E_1)*27.211
+            elif k > considered_state:
+                M[a][b] += (pd_tpa.loc[str(k),'Transition dipole moment'][a]\
+                     *pd_tpa.loc[str(considered_state) + '->'+str(k)+':','Transition dipole moment'][b]\
+                     + pd_tpa.loc[str(considered_state) + '->'+str(k)+':','Transition dipole moment'][a]\
+                     *pd_tpa.loc[str(k),'Transition dipole moment'][b])*(2*np.sin(phase)*np.exp(1j*phase))/(E_k-E_1)*27.211
+            else:
+                M[a][b] += (pd_tpa.loc[str(k),'Transition dipole moment'][a]\
+                     *(pd_tpa.loc[str(considered_state),'dipole moment'][b]-pd_tpa.loc['0','dipole moment'][b])\
+                     + (pd_tpa.loc[str(considered_state),'dipole moment'][a]-pd_tpa.loc['0','dipole moment'][a])\
+                     *pd_tpa.loc[str(k),'Transition dipole moment'][b])*(2*np.sin(phase)*np.exp(1j*phase))/(E_k-E_1)*27.21    
+    if exclude_state:
+        for k in range(1,tot_state):
+            if k not in exclude_state:
+                E_k = pd_tpa.loc[str(k),'Excitation energy']
+                phase = T_e*(E_k-E_1)/27.211/2
+                if k < considered_state:
+                    M[a][b] += (pd_tpa.loc[str(k),'Transition dipole moment'][a]\
+                         *pd_tpa.loc[str(k)+'->'+str(considered_state)+':','Transition dipole moment'][b]\
+                         + pd_tpa.loc[str(k)+'->'+str(considered_state)+':','Transition dipole moment'][a]\
+                         *pd_tpa.loc[str(k),'Transition dipole moment'][b])*(2*np.sin(phase)*np.exp(1j*phase))/(E_k-E_1)*27.211
+                elif k > considered_state:
+                    M[a][b] += (pd_tpa.loc[str(k),'Transition dipole moment'][a]\
+                         *pd_tpa.loc[str(considered_state) + '->'+str(k)+':','Transition dipole moment'][b]\
+                         + pd_tpa.loc[str(considered_state) + '->'+str(k)+':','Transition dipole moment'][a]\
+                         *pd_tpa.loc[str(k),'Transition dipole moment'][b])*(2*np.sin(phase)*np.exp(1j*phase))/(E_k-E_1)*27.211
+                else:
+                    M[a][b] += (pd_tpa.loc[str(k),'Transition dipole moment'][a]\
+                         *(pd_tpa.loc[str(considered_state),'dipole moment'][b]-pd_tpa.loc['0','dipole moment'][b])\
+                         + (pd_tpa.loc[str(considered_state),'dipole moment'][a]-pd_tpa.loc['0','dipole moment'][a])\
+                         *pd_tpa.loc[str(k),'Transition dipole moment'][b])*(2*np.sin(phase)*np.exp(1j*phase))/(E_k-E_1)*27.21        
     #print(M)
     return M
 
@@ -438,10 +462,10 @@ def plot_contributions(pd_tpa, basis, considered_state, tot_states):
         sigma = get_sigma(M_os)
         plt.bar(j, sigma, width=0.5, color='tab:blue')
         plt.xticks(np.arange(1,tot_states,1))
-        #plt.title("Final TPA cross section for ES "+ str(considered_state) + ": " + str(round(sigma_sos,2)))
-        #plt.ylabel("TPA cross section contribution (a.u.)")
-        #plt.xlabel("Excited state (Three-state model)")
-        #plt.tight_layout()
+        plt.title("Final TPA cross section for ES "+ str(considered_state) + ": " + str(round(sigma_sos,2)))
+        plt.ylabel("TPA cross section contribution (a.u.)")
+        plt.xlabel("Excited state (Three-state model)")
+#        plt.tight_layout()
         
 def plot_contributions_entangled(pd_tpa, basis,T_e, considered_state, tot_states):
     """
@@ -468,54 +492,6 @@ def plot_contributions_entangled(pd_tpa, basis,T_e, considered_state, tot_states
         #plt.xlabel(r"Excited state (Three-state model)  $T_e (fs)$ = "+str(round(T_e,2)))
         #plt.tight_layout()
 
-def plot_contributions_e(pd_tpa, basis, considered_state, tot_states, ETPA = False):
-    """
-    input: dataframe, eg. tpa.csv
-    basis: string, maybe not necessary in the graph
-    ouput: plot the bar graph of the contributions from intemediate states of one 
-           considered state.
-    """
-    tot_states += 1
-    if ETPA == False:
-        M = np.zeros((3,3))
-        cart = product(range(3), repeat = 2)
-        for item in cart:
-            M_sos = get_M_sos(item, pd_tpa, M, considered_state,tot_states)
-        sigma_sos = get_sigma(M_sos)        
-        for j in range(1,tot_states):
-            cart = product(range(3), repeat = 2)
-            for item in cart:
-                 M_os = get_M(item,pd_tpa,M,considered_state,j)
-            sigma = get_sigma(M_os)
-            plt.bar(j, sigma, width=0.5, color='tab:blue')
-            print(j)
-            plt.xticks(np.arange(1,11,1))
-            #plt.title(basis + "---ES"+ str(considered_state) + ": " + str(round(sigma_sos,2)))
-            plt.title("Final TPA cross section for ES "+ str(considered_state) + ": " + str(round(sigma_sos,2)))
-            plt.ylabel("TPA cross section contribution (a.u.)")
-            plt.xlabel("Excited state (Three-state model)")
-            #plt.tight_layout()
-    if ETPA == True:
-        T_e = 5740
-        M = np.zeros((3,3),dtype=complex)
-        cart = product(range(3), repeat = 2)
-        for item in cart:
-            M_sos = get_M_sos_entangled(item, pd_tpa, M, T_e,considered_state,tot_states)
-        sigma_sos = get_sigma_entangled(M_sos)        
-        for j in range(1,tot_states):
-            cart = product(range(3), repeat = 2)
-            for item in cart:
-                 M_os = get_M_entangled(item,pd_tpa,M,T_e,considered_state,j)
-            sigma = np.real(get_sigma_entangled(M_os))
-            plt.bar(j, sigma, width=0.5, color='tab:blue')
-            plt.xticks(np.arange(1,11,1))
-            #plt.title(basis + "---ES"+ str(considered_state) + ": " + str(round(sigma_sos,2)))
-            plt.title("Final ETPA cross section for ES "+ str(considered_state) + ": " + str(round(np.real(sigma_sos),2)))
-            plt.ylabel("TPA cross section contribution (a.u.)")
-            plt.xlabel("Excited state (Three-state model)")
-            #plt.tight_layout()        
-        
-
 
 def print_contributions(pd_tpa,considered_state, tot_states):
     """
@@ -528,6 +504,8 @@ def print_contributions(pd_tpa,considered_state, tot_states):
     domin_is = []
     sigma_r = []
     sigma_is = []
+    transDipole = []
+    detuning = []
     M = np.zeros((3,3))
     # =============================================================================
     # 1.generate 9 combinations from [0,1,2] for M_a,b
@@ -556,70 +534,97 @@ def print_contributions(pd_tpa,considered_state, tot_states):
     tot_states += 1
     #fig, axs = plt.subplots(2, 3, sharex=True, sharey=False)
     for j in range(1,tot_states):
+        E_1 = pd_tpa.loc[str(considered_state),'Excitation energy']/2
+        E_k = pd_tpa.loc[str(j),'Excitation energy']
+        E_diff = (E_1 - E_k)
         cart = product(range(3), repeat = 2)
         for item in cart:
              M_os = get_M(item,pd_tpa,M,considered_state,j)
         sigma = get_sigma(M_os)
-        print("If only consider the " + str(j) + "th intermediate stata (Three-states model), the final cross section:")
-        print(sigma)
+#        print("If only consider the " + str(j) + "th intermediate stata (Three-states model), the final cross section:")
+#        print(sigma)
         sigma_r.append(sigma)
-        print("\n")
-        if sigma >= sigma_sos*0.06:
+#        print("\n")
+        if sigma >= sigma_sos*0.05:
+            transDipole.append(round(sigma*E_diff/27.21,2))
             domin_is.append(str(j))
-            sigma_is.append(sigma)
-    print(lines)
+            sigma_is.append(round(sigma,2))
+            detuning.append(round(E_diff,3))
     print("The dominant intermediate states are: \n",domin_is)
-    print("\n")
+    print("With the crorss section (au): \n",sigma_is)
+    print("The transition dipole averaged (au):\n",transDipole)
+    print("The detuning energy (eV):\n",detuning)
+    print(lines)
     return domin_is,sigma_is,sigma_r
     #    sigma_sum += sigma
     #    print("Sum of previous states:  " + str(sigma_sum))
     #    print("\n")
         
-def print_contributions_entangled(pd_tpa,T_e,considered_state, tot_states):
+
+def trans_dipoleD(pd_tpa,considered_state,target_state):
     """
-    input: dataframe, eg. tpa.csv
-    h_bar = 6.6*10**(-16) # unit: ev.s, here h_bar = 1--atomic units
-    output: print the sos expression and all cotributions from each intemediate state
+    ouput: a 3*3 matrix with D_a,b = <0|r^a|k><k|r^b|f>+ a->b
     """
-    lines = 50*'-'
-    M = np.zeros((3,3),dtype=complex)
-    # =============================================================================
-    # 1.generate 9 combinations from [0,1,2] for M_a,b
-    # =============================================================================
+    M = np.zeros((3,3))
     cart = product(range(3), repeat = 2) # (0,0),(0,1),(0,2)
     # =============================================================================
     # 2.now generate M matrix
     # =============================================================================
+#    E_1 = pd_tpa.loc[str(target_state),'Excitation energy']/2
+#    E_k = pd_tpa.loc[str(considered_state),'Excitation energy']
+#    E_diff = (E_1 - E_k)/27.21
     for item in cart:
-        M_sos = get_M_sos_entangled(item, pd_tpa, M, T_e,considered_state,tot_states)
-    sigma_sos = get_sigma_entangled(M_sos)
-    ## =============================================================================
-    # 3. generate the transition strength tensor S
-    # =============================================================================
-    #S = np.zeros((9,3,3))
-    #S = get_S(M)
-    ## =============================================================================
-    print("The SOS ETPA cross section for the " + str(considered_state) + "th state is:")
-    print(sigma_sos)
-    print(lines)
-    # =============================================================================
-    # Determine which intermediate state contributes the most
-    # =============================================================================
-    #sigma_sum = 0
-    tot_states += 1
-    #fig, axs = plt.subplots(2, 3, sharex=True, sharey=False)
-    for j in range(1,tot_states):
-        cart = product(range(3), repeat = 2)
-        for item in cart:
-             M_os = get_M_entangled(item,pd_tpa,M,T_e,considered_state,j)
-        sigma = get_sigma_entangled(M_os)
-        print("If only consider the " + str(j) + "th intermediate stata (Three-states model), the final cross section:")
-        print(sigma)
-        print("\n")
-    #    sigma_sum += sigma
-    #    print("Sum of previous states:  " + str(sigma_sum))
-    #    print("\n")
+        M_os = get_M(item,pd_tpa,M,target_state,considered_state)
+#    D = np.multiply(M_os,E_diff)
+    D = M_os
+    return D
     
+def get_weight(pd_tpa,considered_state1,considered_state2,target_state):
+    D_s1 = trans_dipoleD(pd_tpa,considered_state1,target_state)
+#    print("The 3*3 matrix of D_k for state "+ str(considered_state1),D_s1)
+    D_s2 = trans_dipoleD(pd_tpa,considered_state2,target_state)
+#    print("The 3*3 matrix of D_k for state "+ str(considered_state2),D_s2)
+    sigma_f = 0
+    sigma_g = 0 
+    sigma_h = 0
+    for i in range(3):
+        for j in range(3):
+            sigma_f += D_s1[i][i]*D_s2[j][j]
+            #print(sigma_f)
+            sigma_g += D_s1[i][j]*D_s2[i][j]
+            #print(sigma_g)
+            sigma_h += D_s1[i][j]*D_s2[j][i]
+    #print("sigma_F:",sigma_f)
+    #print("sigma_G:",sigma_g)
+    #print("sigma_H:",sigma_h)
+    weight = (1/30)*(2*sigma_f + 2*sigma_g + 2*sigma_h)
+    print("The weight between state "+ str(considered_state1)\
+          + " <-> State " + str(considered_state2)+" is: \n",weight)
+  
+
+def etpa_time(T_e,pd_tpa,considered_state,tot_states,polarization = "parallel",exclude_state=None):
+    """
+    input: list of entanglement time in the unit of fs
+            exclude_state: a list of states do not take in account
+    ouput: list- etpa value
+    """
+    M_matrix = {}
+    sigma_entangled = []
+    for t in T_e:    
+        #print(t)
+        cart = product(range(3), repeat = 2)
+        M = np.zeros((3,3),dtype = complex)
+        for item in cart:
+            get_M_sos_entangled(item,pd_tpa,M,t,considered_state, tot_states,exclude_state)
+            #get_M_entangled(item,pd_tpa,M,t,considered_state, 1)
+        M_matrix[t] = M
+        sig = get_sigma_entangled(M,polarization)
+#        sig = sig/(t)
+        #print(sig)
+        sigma_entangled.append(sig)
+    sigma_entangled = np.around(np.real(sigma_entangled),decimals=2)
+    print('finished the last one:',sigma_entangled[-1])
+    return sigma_entangled
 
 def heatmap(data, row_labels, col_labels, ax=None,
             cbar_kw={}, cbarlabel="", **kwargs):
@@ -704,3 +709,57 @@ def heatmap_IS(pd_tpa,tot_states):
     im, _ = heatmap(data,y,x,vmin=0,cmap="magma_r",cbarlabel="intermediate TPA contribution (a.u.)")
     plt.show()
     #annotate_heatmap(im, valfmt="{x:d}", size=7, threshold=20,textcolors=("red", "white"))
+
+def exc_ladder(pd_iso,pd_sup,tot_states,s_iso,s_sup,delta=1,title=" ",yval="Excitation energy",dominant=False):
+#    fig, ax = plt.subplots()
+#    plt.figure(figsize=(3,4.5))
+    i = 0
+    x = [1,2]
+    if dominant:
+        domi_iso,sigma_iso_is,sigma_iso = print_contributions(pd_iso,s_iso, tot_states)
+        domi_sup,sigma_sup_is,sigma_sup = print_contributions(pd_sup,s_sup, tot_states)
+        z = [sigma_iso_is,sigma_sup_is]
+        y = [pd_iso.loc[domi_iso,yval], pd_sup.loc[domi_sup,yval]]
+        print(y)
+    else:
+        y = [pd_iso.loc["1":str(tot_states),yval],pd_sup.loc["1":str(tot_states),yval]]
+        domi_iso,sigma_iso_is,sigma_iso = print_contributions(pd_iso,s_iso, tot_states)
+        domi_sup,sigma_sup_is,sigma_sup = print_contributions(pd_sup,s_sup, tot_states)
+        z = [sigma_iso,sigma_sup]
+    for xe, ye in zip(x, y):
+        plt.scatter([xe] * len(ye), ye,c=z[i],cmap="copper_r",s=2000,marker='_',linewidth=1.5)
+        if i == 0:
+            for j,s in enumerate(domi_iso):
+                plt.annotate("S"+s,xy=(xe+0.1,ye[j]),ha='center',size=10)
+        elif i == 1:
+            for j,s in enumerate(domi_sup):
+                plt.annotate("S"+s,xy=(xe-0.1,ye[j]),ha='center',size=10) 
+        i = i + 1 
+    y_min = min(min(y[0]),min(y[1]))
+    y_max = max(max(y[0]),max(y[1]))
+    center = (y_max+y_min)/2
+    plt.text(1.5,center, r"$\frac{\Delta}{\Delta'}=$"+str(delta),ha='center', va='center',size=14)
+    iso_label = r"$|f=$"+str(s_iso)+r"$\rangle_{nap}$"
+    sup_label = r"$|f=$"+str(s_sup)+r"$\rangle_{chl}$"
+    plt.xticks([1,2],[iso_label, sup_label])
+    plt.ylabel("Excitation energy (eV)")
+#    plt.grid(None)
+#    plt.grid(axis='y',linewidth = 0.5)
+    plt.grid(which='both',linestyle = '--', axis='y',linewidth = 1)
+    plt.title(title)
+    cbar = plt.colorbar(ticks=[min(sigma_sup_is),max(sigma_sup_is)])
+    cbar.ax.set_yticklabels(['Low','High'])
+    
+    # the color bar with dual labels
+#    cbar = plt.colorbar(pad=0.2)
+#    cbar.ax.yaxis.set_ticks_position('left')
+#    pos = cbar.ax.get_position()
+#    cbar.ax.set_aspect('auto')
+#    ax2 = cbar.ax.twinx()
+#    ax2.set_ylim(min(sigma_iso),max(sigma_iso))
+##    pos.x0 +=0.05
+#    cbar.ax.set_position(pos)
+#    ax2.set_position(pos)
+
+#    plt.tight_layout()
+#    plt.show()    

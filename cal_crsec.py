@@ -134,16 +134,6 @@ basis = 'acqz'
 #pd_tpa_c10h7cl = read_tpa(path_c10h7cl)
 #pd_tpa_c10h7f = read_tpa(path_c10h7f)
 # =============================================================================
-#pd_tpa_c4h4n2_c2v_10 = read_tpa(os.path.join(root,'c4h4n2-c2v','10es'))
-#pd_tpa_c4h4n2_d2h_10 = read_tpa(os.path.join(root,'c4h4n2-d2h','10es'))
-#pd_tpa_c4h4n2_c2v_20 = read_tpa(os.path.join(root,'c4h4n2-c2v','20es'))
-#pd_tpa_c4h4n2_d2h_20 = read_tpa(os.path.join(root,'c4h4n2-d2h','20es'))
-#pd_tpa_c4h4n2_d2h_h2o_es10 = read_tpa(os.path.join(root,'c4h4n2-d2h-h20'))
-#pd_tpa_c4h4n2_d2h_h2o_es20 = read_tpa(os.path.join(root,'c4h4n2-d2h-h20','20es'))
-#pd_tpa_c4h4n2_c2v_h2o_es20 = read_tpa(os.path.join(root,'c4h4n2-c2v-h2o'))
-#pd_tpa_c4h4n2_d2h_h2o_MEes10 = read_tpa(os.path.join(root,'c4h4n2-d2h-h20','10es','ME'))
-#pd_tpa_c4h4n2_d2h_h2o_MEes20 = read_tpa(os.path.join(root,'c4h4n2-d2h-h20','20es',"ME"))
-# =============================================================================
 pd_tpa_9a_iso = parse_pdTPA(root,"9a",'iso')
 pd_tpa_9a_sup = parse_pdTPA(root,"9a",'sup')
 pd_tpa_1a_iso = parse_pdTPA(root,"1a",'iso')
