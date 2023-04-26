@@ -13,6 +13,68 @@ from CCParser.QChem import ADC
 from itertools import product
 import matplotlib.pyplot as plt
 
+def converter(instr):
+     # when datafram is saved to csv, numpy array becomes string
+    return np.fromstring(instr[1:-1],sep =' ') 
+
+
+def parse_tpa(path):
+    path = os.path.join(path,'tpa.csv')
+    pd_path = pd.read_csv(path,converters={'Transition dipole moment':converter,\
+                                           'dipole moment':converter},index_col = 'Excited state')
+    return pd_path
+
+def lines2array(line):
+    """
+    input string format from Qchem, eg ['\n','1.1 2.2 3.3\n']
+    return: a numpy array with the float format.
+    """
+    ar = []
+    for i in line:
+        if len(i) > 2:
+            i = i.replace('\n','')
+            ar.append([float(x) for x in i.split()])
+    ar = np.asarray(ar)
+    return ar
+
+def read_modes(out):
+    """
+    read a vibration analysis output from Qchem calculations.
+    return a (3N,3N) matrix of eigenvections of H_vib L = W L
+     with frequency w (3N,) 
+    """
+    out = os.path.join(out,"vib.out")
+    with open(out,"r")as f:
+        done = False
+        start = []
+        end = []
+        rl = f.readlines()
+        for i, line in enumerate(rl):
+            if "$molecule" in line:
+                start.append(i)
+                s = start[0]
+                done = True
+            if done and ("$end" in line):
+                end.append(i)
+                e = end[0]
+            if "Eigenvectors of Proj. Mass-Weighted Hessian Matrix" in line:
+                vec_num = i
+            if "Vibrational Frequencies in atomic units" in line:
+                w_num = i
+        N = e - s -2     # get the shape 
+        vec_lines = rl[vec_num+1:w_num]
+        w_lines = rl[w_num+1:int(w_num+3*N/6+1)]
+    vec = lines2array(vec_lines)
+    a,b = vec.shape
+    col = int(a/(3*N))
+    vec_align = np.zeros((3*N,3*N))
+    for i in range(1,col+1):  # to rearrange the array
+        vec_align[:,6*(i-1):6*i,] = vec[3*N*(i-1):3*N*i,:]
+    w = lines2array(w_lines)
+    w = np.ndarray.flatten(w)  
+    return w,vec_align
+        
+
 def read_tpa(path):
     """
     input: the folder with the qchem output
@@ -67,6 +129,105 @@ def read_tpa(path):
                      tpa['dipole moment'].append(ex_dip)
                      tpa['Total dipole'].append(tot_dipole)
                      #tpa['Transition amplitudes'].append(ex_amp.set_index('weight'))  
+                if "Transition from excited state" in line:
+                    try:
+                        ex_num_start = line.split()[4]
+                        ex_num_end = line.split()[8]
+                        ex_energy = es.exc_energies(i+3,rl)
+                        ex_osi = es.osc_strength(i+4,rl)
+                        ex_transDip = es.transition_dipole(i+5,rl)
+                        tpa["Excited state"].append(ex_num_start+'->'+ex_num_end)
+                        tpa['Excitation energy'].append(ex_energy)
+                        tpa['Oscillator strength'].append(round(ex_osi,3))
+                        tpa['TPA cross section(sos)'].append("-")
+                        tpa['TPA cross section(dI)'].append("-")
+                        tpa['Transition dipole moment'].append(ex_transDip)
+                        tpa['dipole moment'].append("-")
+                        tpa['Total dipole'].append("-")
+                    except IndexError:
+                        pass
+        pd_tpa = pd.DataFrame(tpa).set_index('Excited state')
+        pd_tpa.to_csv(os.path.join(path,'tpa.csv'))
+        print("Saved tpa.csv in File!")
+        return pd_tpa
+def read_tpa_pcm(path,correction=True):
+    """
+    input: the folder with the qchem output
+    read:    ADC(2)-PCM TPA calulation
+    return:  dataframe with TPA-related info
+    """
+    tpa = {'Excited state':[],'Excitation energy':[],'Oscillator strength':[],'dipole moment':[],\
+           'Total dipole':[],'TPA cross section(sos)':[],'TPA cross section(dI)':[],"Transition dipole moment":[]}
+    try:
+        out = ccj.find_output(path)
+    except AssertionError:
+        pass
+    else:
+        with open(out,'r') as f:
+            rl = f.readlines()
+            es = ADC()
+            # I need emb MP2 dipole for ground state
+            gs_linenum = [i for i,line in enumerate(rl) if "MP(2) Summary" in line][-1]
+            gs_dip = es.dipole_moment(gs_linenum+4,rl)
+            tpa['Excited state'].append('0')
+            tpa['dipole moment'].append(gs_dip)
+            tpa['Total dipole'].append(float(rl[gs_linenum+5].split()[-1]))
+            tpa['Excitation energy'].append(0)
+            tpa['Oscillator strength'].append("-")
+            tpa['TPA cross section(sos)'].append("-")
+            tpa['TPA cross section(dI)'].append("-")
+            tpa['Transition dipole moment'].append("-")
+            for i,line in enumerate(rl):        
+                matches = ["Excited state","[converged]"]
+                if all(match in line for match in matches) and correction == True:                #if "Excited state" in line:
+                     ex_num = line.split()[2] # ['Excited', 'state', '1'] 
+                     ex_energy = es.exc_energies(i+12,rl) # ADC(2)/ptSS-PCM(PTD)
+                     ex_osi = es.osc_strength(i+24,rl)
+                     ex_cro_sos = float(rl[i+27].split()[-1])/30
+                     if "Two-photon absorption cross-section" in rl[i+32]:                    
+                         ex_cro_dI = float(rl[i+32].split()[-1])/30
+                         ex_cro_dI = round(ex_cro_dI,2)
+                         ex_dip = es.dipole_moment(i+38,rl)
+                         tot_dipole = float(rl[i+39].split()[-1])
+                     else:
+                         ex_cro_dI = "-"
+                         ex_dip = es.dipole_moment(i+16,rl)
+                         tot_dipole = float(rl[i+17].split()[-1])
+                     #ex_amp = es.amplitudes(i+28,rl).to_dataframe()
+                     ex_transDip = es.transition_dipole(i+25,rl)
+                     tpa["Excited state"].append(ex_num)
+                     tpa['Excitation energy'].append(ex_energy)
+                     tpa['Oscillator strength'].append(round(ex_osi,3))
+                     tpa['TPA cross section(sos)'].append(round(ex_cro_sos,2))
+                     tpa['TPA cross section(dI)'].append(ex_cro_dI)
+                     tpa['Transition dipole moment'].append(ex_transDip)
+                     tpa['dipole moment'].append(ex_dip)
+                     tpa['Total dipole'].append(tot_dipole)
+                     #tpa['Transition amplitudes'].append(ex_amp.set_index('weight'))  
+                if all(match in line for match in matches) and correction == False:                #if "Excited state" in line:
+                     ex_num = line.split()[2] # ['Excited', 'state', '1'] 
+                     ex_energy = es.exc_energies(i+8,rl) # Excitation energy (PCM 0th order):
+                     ex_osi = es.osc_strength(i+24,rl)
+                     ex_cro_sos = float(rl[i+27].split()[-1])/30
+                     if "Two-photon absorption cross-section" in rl[i+32]:                    
+                         ex_cro_dI = float(rl[i+32].split()[-1])/30
+                         ex_cro_dI = round(ex_cro_dI,2)
+                         ex_dip = es.dipole_moment(i+38,rl)
+                         tot_dipole = float(rl[i+39].split()[-1])
+                     else:
+                         ex_cro_dI = "-"
+                         ex_dip = es.dipole_moment(i+16,rl)
+                         tot_dipole = float(rl[i+17].split()[-1])
+                     #ex_amp = es.amplitudes(i+28,rl).to_dataframe()
+                     ex_transDip = es.transition_dipole(i+25,rl)
+                     tpa["Excited state"].append(ex_num)
+                     tpa['Excitation energy'].append(ex_energy)
+                     tpa['Oscillator strength'].append(round(ex_osi,3))
+                     tpa['TPA cross section(sos)'].append(round(ex_cro_sos,2))
+                     tpa['TPA cross section(dI)'].append(ex_cro_dI)
+                     tpa['Transition dipole moment'].append(ex_transDip)
+                     tpa['dipole moment'].append(ex_dip)
+                     tpa['Total dipole'].append(tot_dipole)
                 if "Transition from excited state" in line:
                     try:
                         ex_num_start = line.split()[4]
@@ -160,6 +321,7 @@ def get_M(Cart_turple,pd_tpa,M, considered_state, intermediate_state):
     """
     Cart_turple: turple type eg. (0,0)
     calculate the TPA transition moment M matrix (3,3)
+    M_ab = <0|u^a|k><k|u^b|f>/(w_k-w_f/2) + a->b
     one intermediate state(IS) case ---devided by E unit:eV
     """
     E_1 = pd_tpa.loc[str(considered_state),'Excitation energy']/2
@@ -220,7 +382,8 @@ def get_M_entangled(Cart_turple,pd_tpa,M, T_e, considered_state, intermediate_st
 
 def get_M_sos(Cart_turple,pd_tpa,M,considered_state, tot_state):
     """
-    The SOS expression using fluctuation operator...
+    The SOS expression using fluctuation operator. 
+    M_ab =sum_k{ <0|u^a|k><k|u^b|f>/(w_k-w_f/2) + a->b}
     Cart_turple: turple type eg. (0,0)         
     calculate the TPA transition moment M matrix
     sos intermediate state(IS) case --devided by E unit:eV=1/27 a.u. 
@@ -541,8 +704,8 @@ def print_contributions(pd_tpa,considered_state, tot_states):
         for item in cart:
              M_os = get_M(item,pd_tpa,M,considered_state,j)
         sigma = get_sigma(M_os)
-#        print("If only consider the " + str(j) + "th intermediate stata (Three-states model), the final cross section:")
-#        print(sigma)
+        print("If only consider the " + str(j) + "th intermediate stata (Three-states model), the final cross section:")
+        print(sigma)
         sigma_r.append(sigma)
 #        print("\n")
         if sigma >= sigma_sos*0.05:
@@ -552,8 +715,8 @@ def print_contributions(pd_tpa,considered_state, tot_states):
             detuning.append(round(E_diff,3))
     print("The dominant intermediate states are: \n",domin_is)
     print("With the crorss section (au): \n",sigma_is)
-    print("The transition dipole averaged (au):\n",transDipole)
-    print("The detuning energy (eV):\n",detuning)
+#    print("The transition dipole averaged (au):\n",transDipole)
+#    print("The detuning energy (eV):\n",detuning)
     print(lines)
     return domin_is,sigma_is,sigma_r
     #    sigma_sum += sigma
@@ -713,42 +876,49 @@ def heatmap_IS(pd_tpa,tot_states):
 def exc_ladder(pd_iso,pd_sup,tot_states,s_iso,s_sup,delta=1,title=" ",yval="Excitation energy",dominant=False):
 #    fig, ax = plt.subplots()
 #    plt.figure(figsize=(3,4.5))
-    i = 0
+    i= 0
     x = [1,2]
+    domi_iso,sigma_iso_is,sigma_iso = print_contributions(pd_iso,s_iso, tot_states)
+    domi_sup,sigma_sup_is,sigma_sup = print_contributions(pd_sup,s_sup, tot_states)
     if dominant:
-        domi_iso,sigma_iso_is,sigma_iso = print_contributions(pd_iso,s_iso, tot_states)
-        domi_sup,sigma_sup_is,sigma_sup = print_contributions(pd_sup,s_sup, tot_states)
         z = [sigma_iso_is,sigma_sup_is]
         y = [pd_iso.loc[domi_iso,yval], pd_sup.loc[domi_sup,yval]]
         print(y)
     else:
         y = [pd_iso.loc["1":str(tot_states),yval],pd_sup.loc["1":str(tot_states),yval]]
-        domi_iso,sigma_iso_is,sigma_iso = print_contributions(pd_iso,s_iso, tot_states)
-        domi_sup,sigma_sup_is,sigma_sup = print_contributions(pd_sup,s_sup, tot_states)
         z = [sigma_iso,sigma_sup]
     for xe, ye in zip(x, y):
         plt.scatter([xe] * len(ye), ye,c=z[i],cmap="copper_r",s=2000,marker='_',linewidth=1.5)
-        if i == 0:
-            for j,s in enumerate(domi_iso):
-                plt.annotate("S"+s,xy=(xe+0.1,ye[j]),ha='center',size=10)
-        elif i == 1:
-            for j,s in enumerate(domi_sup):
-                plt.annotate("S"+s,xy=(xe-0.1,ye[j]),ha='center',size=10) 
+        if dominant:
+            if i == 0 :
+                for j,s in enumerate(domi_iso):
+                    plt.annotate("S"+s,xy=(xe+0.1,ye[j]),ha='center',size=12,weight="bold")
+            if i == 1 :
+                for j,s in enumerate(domi_sup):
+                    plt.annotate("S"+s,xy=(xe-0.1,ye[j]),ha='center',size=12,weight="bold") 
+        if not dominant:
+            if i == 0:
+                for j in range(1,tot_states+1):
+                    plt.annotate(str(j),xy=(xe+0.1,ye[j-1]),ha='center',size=11,weight="bold")
+            if i == 1 :
+                for j in range(1,tot_states+1):
+                    plt.annotate(str(j),xy=(xe-0.1,ye[j-1]),ha='center',size=11,weight="bold")
         i = i + 1 
-    y_min = min(min(y[0]),min(y[1]))
-    y_max = max(max(y[0]),max(y[1]))
-    center = (y_max+y_min)/2
-    plt.text(1.5,center, r"$\frac{\Delta}{\Delta'}=$"+str(delta),ha='center', va='center',size=14)
-    iso_label = r"$|f=$"+str(s_iso)+r"$\rangle_{nap}$"
-    sup_label = r"$|f=$"+str(s_sup)+r"$\rangle_{chl}$"
-    plt.xticks([1,2],[iso_label, sup_label])
+    if dominant:
+        y_min = min(min(y[0]),min(y[1]))
+        y_max = max(max(y[0]),max(y[1]))
+        center = (y_max+y_min)/2
+        plt.text(1.5,center, r"$\frac{\Delta}{\Delta'}=$"+str(delta),ha='center', va='center',size=14)
+        cbar = plt.colorbar(ticks=[min(sigma_sup_is),max(sigma_sup_is)])
+        cbar.ax.set_yticklabels(['Low','High'])
+    iso_label = r"$|f=$"+str(s_iso)+r"$\rangle_{free}$"
+    sup_label = r"$|f'=$"+str(s_sup)+r"$\rangle_{complexed}$"
+    plt.xticks([1,2],[iso_label, sup_label],fontsize=12)
     plt.ylabel("Excitation energy (eV)")
 #    plt.grid(None)
 #    plt.grid(axis='y',linewidth = 0.5)
     plt.grid(which='both',linestyle = '--', axis='y',linewidth = 1)
     plt.title(title)
-    cbar = plt.colorbar(ticks=[min(sigma_sup_is),max(sigma_sup_is)])
-    cbar.ax.set_yticklabels(['Low','High'])
     
     # the color bar with dual labels
 #    cbar = plt.colorbar(pad=0.2)
