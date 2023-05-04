@@ -37,13 +37,13 @@ def lines2array(line):
     ar = np.asarray(ar)
     return ar
 
-def read_modes(out):
+def read_modes(path):
     """
     read a vibration analysis output from Qchem calculations.
     return a (3N,3N) matrix of eigenvections of H_vib L = W L
      with frequency w (3N,) 
     """
-    out = os.path.join(out,"vib.out")
+    out = ccj.find_output(path)
     with open(out,"r")as f:
         done = False
         start = []

@@ -57,19 +57,45 @@ def find_locmax(sigma,height=1000,distance=200):
     peaks = np.multiply(peaks,0.05)
     print("The peaks position(in fs:)",peaks)
        
+
 # Define parameters
 root = os.getcwd()
 polarization = "parallel"
 T_e = np.arange(0,100.,0.05)
+#pd_iso = parse_tpa(os.path.join(root,'c4h4n2-c2v-h2o','iso'))
+#pd_sup = read_tpa(os.path.join(root,'c4h4n2-c2v-h2o','SE'))
 pd_iso = parse_tpa(os.path.join(root,'9a','iso'))
-pd_sup = parse_tpa(os.path.join(root,'9a','ME'))
+pd_sup = read_tpa(os.path.join(root,'9a','sup'))
 #pd_iso = parse_tpa(os.path.join(root,'c4h4n2-d2h-h2o','iso'))
-#pd_sup = parse_tpa(os.path.join('c4h4n2-d2h-h2o','20es'))
+#pd_sup = read_tpa(os.path.join('c4h4n2-d2h-h2o','SE'))
 domi = True
 s_iso = 5
 s_sup = 4
-delta = 1.24
-tot_states =10
+delta = 6.0
+tot_states = 10
+# mols:[iso,sup,frozenB-ME,prepol-ME]
+mols = {'c4h4n2-d2h-h2o':[10,10,10,10],'c4h4n2-c2v-h2o':[11,12,10,10],'1a':[8,8,8],'1e':[8,8,8],
+        '9a':[5,4,4,4],'10a':[4,5,5]}
+complexes = ['iso','sup','ME']
+# =============================================================================
+# print tpa cross section
+#tpa = {'systems':[],'state':[],'Excitation energy':[],'Oscillator strength':[],\
+#       'TPA cross section(sos)':[],'TPA cross section(dI)':[]}
+#for mol, s in mols.items():
+#    n = 0
+#    for value in complexes:
+#        tpa['systems'].append(mol+'-'+value)
+#        pd_s = parse_tpa(os.path.join(root,mol,value))        
+#        tpa['state'].append(s[n])
+#        tpa['Excitation energy'].append(pd_s.loc[str(s[n]),'Excitation energy'])
+#        tpa['Oscillator strength'].append(pd_s.loc[str(s[n]),'Oscillator strength'])
+#        tpa['TPA cross section(sos)'].append(pd_s.loc[str(s[n]),'TPA cross section(sos)'])
+#        tpa['TPA cross section(dI)'].append(pd_s.loc[str(s[n]),'TPA cross section(dI)'])
+#        n += 1
+#pd_tpa = pd.DataFrame(tpa).set_index('systems')
+#pd_tpa.to_csv(os.path.join('tpa-sum.csv'))
+#print(pd_tpa)
+# =============================================================================
 # =============================================================================
 # get the dominant intermediate states
 domi_iso = print_contributions(pd_iso,considered_state=s_iso, tot_states=tot_states)
@@ -86,10 +112,10 @@ print("the maximum etpa cross section for iso: \n",max(sigma_iso))
 #sigma_sup = etpa_time(T_e,pd_sup,considered_state=s_sup,tot_states=tot_states)
 #find_locmax(sigma_sup,height=400,distance=500)
 print("the maximum etpa cross section for sup: \n",max(sigma_sup))
-## =============================================================================
-### plot it
-#print(normalized(sigma_iso))
-#print(normalized(sigma_sup))
+# =============================================================================
+# plot it
+print(normalized(sigma_iso))
+print(normalized(sigma_sup))
 fig = plt.figure()
 gs = gridspec.GridSpec(2,3)  
 ax1 = fig.add_subplot(gs[0,:2])
@@ -99,7 +125,7 @@ plt.plot(T_e, sigma_iso,label='chromophore')
 plt.legend(loc='lower right')
 ax2 = fig.add_subplot(gs[1,:2])#,sharey=ax1)
 plt.yscale("log")  
-plt.plot(T_e, sigma_sup,color='C2',label='FDET (frozen B)')
+plt.plot(T_e, sigma_sup,color='C2',label='chromophore in the complex')
 plt.legend(loc='lower right')
 ax3 = fig.add_subplot(gs[:,2])
 exc_ladder(pd_iso,pd_sup,s_iso=s_iso,s_sup=s_sup,tot_states=tot_states,delta=delta,title=" ",dominant=domi)

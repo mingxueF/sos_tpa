@@ -12,7 +12,6 @@ import pandas as pd
 import matplotlib as mpl
 from tools import read_tpa,exc_ladder,print_contributions, etpa_time,get_weight
 import matplotlib.pyplot as plt
-import matplotlib.pyplot as plt
 from scipy.stats import norm
 from scipy.signal import find_peaks
 import matplotlib.gridspec as gridspec
@@ -21,7 +20,7 @@ import statistics
 plt.rcParams.update({
     "font.family": "serif",
 #    "font.sans-serif":['Helvetica'],
-    "font.size": "10",
+    "font.size": "12",
     "figure.facecolor":"white",
     "text.usetex":True,
     "pgf.texsystem" : "pdflatex",
@@ -61,20 +60,20 @@ def find_locmax(sigma,height=1000,distance=200):
 root = os.getcwd()
 polarization = "parallel"
 T_e = np.arange(0,100.,0.05)
-#pd_iso = parse_tpa(os.path.join(root,'9a','iso'))
-#pd_sup = parse_tpa(os.path.join(root,'9a','sup'))
-pd_iso = parse_tpa(os.path.join(root,'c10h8'))
-pd_sup = parse_tpa(os.path.join(root,'c10h7cl'))
+pd_iso = parse_tpa(os.path.join(root,'9a','iso'))
+pd_sup = parse_tpa(os.path.join(root,'9a','sup'))
+#pd_iso = parse_tpa(os.path.join(root,'c10h8'))
+#pd_sup = parse_tpa(os.path.join(root,'c10h7cl'))
 #pd_iso = parse_tpa(os.path.join(root,'c4h4n2-d2h-h2o','iso'))
 #pd_sup = parse_tpa(os.path.join('c4h4n2-d2h-h2o','20es'))
 domi = True
-s_iso = 8
-s_sup = 8
-#s_iso = 5
-#s_sup = 4
+#s_iso = 8
+#s_sup = 8
+s_iso = 5
+s_sup = 4
 #s_iso = 10
 #s_sup = 11
-delta = 18.3
+delta = 6.0
 tot_states =10
 # =============================================================================
 # get the dominant intermediate states
@@ -90,10 +89,10 @@ tot_states =10
 #exc_ladder(pd_iso,pd_sup,s_iso=s_iso,s_sup=s_sup,tot_states=tot_states,delta=delta,dominant=domi)
 # =============================================================================
 # check the etpa cross section
-sigma_iso = etpa_time(T_e,pd_iso,considered_state=s_iso,tot_states=tot_states)
+#sigma_iso = etpa_time(T_e,pd_iso,considered_state=s_iso,tot_states=tot_states)
 #find_locmax(sigma_iso,height=700,distance=100)
 #print("the maximum etpa cross section for iso: \n",max(sigma_iso))
-sigma_sup = etpa_time(T_e,pd_sup,considered_state=s_sup,tot_states=tot_states)
+#sigma_sup = etpa_time(T_e,pd_sup,considered_state=s_sup,tot_states=tot_states,exclude_state=[4])
 #find_locmax(sigma_sup,height=400,distance=500)
 #print("the maximum etpa cross section for sup: \n",max(sigma_sup))
 ## =============================================================================
@@ -104,12 +103,12 @@ fig = plt.figure()
 gs = gridspec.GridSpec(2,3)  
 ax1 = fig.add_subplot(gs[0,:2])
 plt.yscale("log")  
-plt.plot(T_e, sigma_iso,label='naphthalene')
- #ax1.set_ylim(bottom=1)
+plt.plot(T_e, sigma_iso,label='chromophore')
+ax1.set_ylim(bottom=1)
 plt.legend(loc='lower right')
 ax2 = fig.add_subplot(gs[1,:2],sharey=ax1)
 plt.yscale("log")  
-plt.plot(T_e, sigma_sup,color='C2',label='1-chloronaphthalene')
+plt.plot(T_e, sigma_sup,color='C2',label='chromophore in the complex')
 plt.legend(loc='lower right')
 ax3 = fig.add_subplot(gs[:,2])
 exc_ladder(pd_iso,pd_sup,s_iso=s_iso,s_sup=s_sup,tot_states=tot_states,delta=delta,title=" ",dominant=domi)
