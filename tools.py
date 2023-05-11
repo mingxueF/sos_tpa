@@ -908,6 +908,7 @@ def exc_ladder(pd_iso,pd_sup,tot_states,s_iso,s_sup,delta=1,title=" ",yval="Exci
         y_min = min(min(y[0]),min(y[1]))
         y_max = max(max(y[0]),max(y[1]))
         center = (y_max+y_min)/2
+        delta = determine_delta(pd_iso,pd_sup,domi_iso,sigma_iso_is,domi_sup,sigma_sup_is)
         plt.text(1.5,center, r"$\frac{\Delta}{\Delta'}=$"+str(delta),ha='center', va='center',size=14)
         cbar = plt.colorbar(ticks=[min(sigma_sup_is),max(sigma_sup_is)])
         cbar.ax.set_yticklabels(['Low','High'])
@@ -919,7 +920,7 @@ def exc_ladder(pd_iso,pd_sup,tot_states,s_iso,s_sup,delta=1,title=" ",yval="Exci
 #    plt.grid(axis='y',linewidth = 0.5)
     plt.grid(which='both',linestyle = '--', axis='y',linewidth = 1)
     plt.title(title)
-    
+    plt.show()    
     # the color bar with dual labels
 #    cbar = plt.colorbar(pad=0.2)
 #    cbar.ax.yaxis.set_ticks_position('left')
@@ -933,3 +934,23 @@ def exc_ladder(pd_iso,pd_sup,tot_states,s_iso,s_sup,delta=1,title=" ",yval="Exci
 
 #    plt.tight_layout()
 #    plt.show()    
+    
+def determine_delta(pd_iso,pd_sup,domi_iso,sigma_iso_is,domi_sup,sigma_sup_is):
+    sort_iso = list(set(sigma_iso_is))
+    sort_iso.sort(key=float)
+    a = sigma_iso_is.index(sort_iso[-1]) # the larges cross section index
+    b = sigma_iso_is.index(sort_iso[-2]) # the second largest 
+    s_a = domi_iso[a]
+    s_b = domi_iso[b]
+    delta_iso = abs(pd_iso.loc[s_a,"Excitation energy"] - pd_iso.loc[s_b,"Excitation energy"])
+    print("The energy gap between two dominant state from isolated \n {:.3f} : state number S{}, S{} ".format(delta_iso,s_a,s_b))
+    sort_sup = list(set(sigma_sup_is))
+    sort_sup.sort(key=float)
+    a = sigma_sup_is.index(sort_sup[-1]) # the larges cross section index
+    b = sigma_sup_is.index(sort_sup[-2]) # the second largest 
+    s_a = domi_sup[a]
+    s_b = domi_sup[b]
+    delta_sup = abs(pd_sup.loc[s_a,"Excitation energy"] - pd_sup.loc[s_b,"Excitation energy"])
+    print("The energy gap between two dominant state from complexed \n {:.3f} : state number S{}, S{} ".format(delta_sup,s_a,s_b))
+    delta = round(delta_iso/delta_sup,2)
+    return delta
