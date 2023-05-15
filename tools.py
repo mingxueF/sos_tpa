@@ -873,7 +873,7 @@ def heatmap_IS(pd_tpa,tot_states):
     plt.show()
     #annotate_heatmap(im, valfmt="{x:d}", size=7, threshold=20,textcolors=("red", "white"))
 
-def exc_ladder(pd_iso,pd_sup,tot_states,s_iso,s_sup,delta=1,title=" ",yval="Excitation energy",dominant=False):
+def exc_ladder(pd_iso,pd_sup,tot_states,s_iso,s_sup,title=" ",yval="Excitation energy",dominant=False):
 #    fig, ax = plt.subplots()
 #    plt.figure(figsize=(3,4.5))
     i= 0
