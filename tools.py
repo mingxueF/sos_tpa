@@ -191,8 +191,8 @@ def read_tpa_pcm(path,correction=True):
                          tot_dipole = float(rl[i+39].split()[-1])
                      else:
                          ex_cro_dI = "-"
-                         ex_dip = es.dipole_moment(i+16,rl)
-                         tot_dipole = float(rl[i+17].split()[-1])
+                         ex_dip = es.dipole_moment(i+33,rl)
+                         tot_dipole = float(rl[i+34].split()[-1])
                      #ex_amp = es.amplitudes(i+28,rl).to_dataframe()
                      ex_transDip = es.transition_dipole(i+25,rl)
                      tpa["Excited state"].append(ex_num)
@@ -216,8 +216,8 @@ def read_tpa_pcm(path,correction=True):
                          tot_dipole = float(rl[i+39].split()[-1])
                      else:
                          ex_cro_dI = "-"
-                         ex_dip = es.dipole_moment(i+16,rl)
-                         tot_dipole = float(rl[i+17].split()[-1])
+                         ex_dip = es.dipole_moment(i+33,rl)
+                         tot_dipole = float(rl[i+34].split()[-1])
                      #ex_amp = es.amplitudes(i+28,rl).to_dataframe()
                      ex_transDip = es.transition_dipole(i+25,rl)
                      tpa["Excited state"].append(ex_num)
