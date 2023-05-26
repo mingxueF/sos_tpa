@@ -875,7 +875,7 @@ def heatmap_IS(pd_tpa,tot_states):
 
 def exc_ladder(pd_iso,pd_sup,tot_states,s_iso,s_sup,title=" ",yval="Excitation energy",yticks = None,dominant=False):
 #    fig, ax = plt.subplots() 
-    plt.figure(figsize=(3,4.5))
+    plt.figure(figsize=(3,6.5))
     i= 0
     x = [1,2]
     domi_iso,sigma_iso_is,sigma_iso = print_contributions(pd_iso,s_iso, tot_states)
@@ -899,10 +899,10 @@ def exc_ladder(pd_iso,pd_sup,tot_states,s_iso,s_sup,title=" ",yval="Excitation e
         if not dominant:
             if i == 0:
                 for j in range(1,tot_states+1):
-                    plt.annotate(str(j),xy=(xe+0.2,ye[j-1]),ha='center',size=11,weight="bold")
+                    plt.annotate(str(j),xy=(xe+0.2,ye[j-1]),ha='center',size=10,weight="bold")
             if i == 1 :
                 for j in range(1,tot_states+1):
-                    plt.annotate(str(j),xy=(xe-0.2,ye[j-1]),ha='center',size=11,weight="bold")
+                    plt.annotate(str(j),xy=(xe-0.2,ye[j-1]),ha='center',size=10,weight="bold")
         i = i + 1 
     if dominant:
         y_min = min(min(y[0]),min(y[1]))
@@ -915,8 +915,11 @@ def exc_ladder(pd_iso,pd_sup,tot_states,s_iso,s_sup,title=" ",yval="Excitation e
     iso_label = r"$|f=$"+str(s_iso)+r"$\rangle_{free}$"
     sup_label = r"$|f'=$"+str(s_sup)+r"$\rangle_{complexed}$"
     plt.xticks([1,2],[iso_label, sup_label],fontsize=12)
-    if yticks.any():
-        plt.yticks(yticks)
+    try:
+        if yticks.any():
+            plt.yticks(yticks)
+    except AttributeError:
+        pass
     plt.ylabel("Excitation energy (eV)")
 #    plt.grid(None)
 #    plt.grid(axis='y',linewidth = 0.5)
