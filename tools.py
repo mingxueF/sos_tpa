@@ -875,7 +875,7 @@ def heatmap_IS(pd_tpa,tot_states):
 
 def exc_ladder(pd_iso,pd_sup,tot_states,s_iso,s_sup,title=" ",yval="Excitation energy",yticks = None,dominant=False):
 #    fig, ax = plt.subplots() 
-    plt.figure(figsize=(3,6.5))
+#    plt.figure(figsize=(3,4.5))
     i= 0
     x = [1,2]
     domi_iso,sigma_iso_is,sigma_iso = print_contributions(pd_iso,s_iso, tot_states)
@@ -914,7 +914,7 @@ def exc_ladder(pd_iso,pd_sup,tot_states,s_iso,s_sup,title=" ",yval="Excitation e
         cbar.ax.set_yticklabels(['Low','High'])
     iso_label = r"$|f=$"+str(s_iso)+r"$\rangle_{free}$"
     sup_label = r"$|f'=$"+str(s_sup)+r"$\rangle_{complexed}$"
-    plt.xticks([1,2],[iso_label, sup_label],fontsize=12)
+    plt.xticks([1,2],[iso_label, sup_label],fontsize=11)
     try:
         if yticks.any():
             plt.yticks(yticks)
@@ -946,8 +946,8 @@ def determine_delta(pd_iso,pd_sup,domi_iso,sigma_iso_is,domi_sup,sigma_sup_is,s_
     if len(sort_iso) == 1:
         s_a = domi_iso[-1]
         delta_iso = abs(pd_iso.loc[s_a,"Excitation energy"] - 0.5*pd_iso.loc[str(s_iso),"Excitation energy"])
-        print("Only one dominant state from isolated (w_{s_a} - 1/2W_{s_iso}) \n \
-              {delta_iso:.3f} : state number S{s_a} ".format(delta_iso =delta_iso,s_a =s_a,s_iso=s_iso))      
+        print("Only one dominant state from isolated (w_{s_a} - 1/2W_{s_iso}) \
+              \n {delta_iso:.3f} : state number S{s_a} ".format(delta_iso =delta_iso,s_a =s_a,s_iso=s_iso))      
     if len(sort_iso) > 1:
         a = sigma_iso_is.index(sort_iso[-1]) # the larges cross section index
         b = sigma_iso_is.index(sort_iso[-2]) # the second largest 
