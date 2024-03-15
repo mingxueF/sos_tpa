@@ -122,7 +122,7 @@ def read_tpa(path):
                      ex_transDip = es.transition_dipole(i+8,rl)
                      tpa["Excited state"].append(ex_num)
                      tpa['Excitation energy'].append(ex_energy)
-                     tpa['Oscillator strength'].append(round(ex_osi,3))
+                     tpa['Oscillator strength'].append(round(ex_osi,4))
                      tpa['TPA cross section(sos)'].append(round(ex_cro_sos,2))
                      tpa['TPA cross section(dI)'].append(ex_cro_dI)
                      tpa['Transition dipole moment'].append(ex_transDip)
@@ -150,6 +150,7 @@ def read_tpa(path):
         pd_tpa.to_csv(os.path.join(path,'tpa.csv'))
         print("Saved tpa.csv in File!")
         return pd_tpa
+    
 def read_tpa_pcm(path,correction=True):
     """
     input: the folder with the qchem output
@@ -197,7 +198,7 @@ def read_tpa_pcm(path,correction=True):
                      ex_transDip = es.transition_dipole(i+25,rl)
                      tpa["Excited state"].append(ex_num)
                      tpa['Excitation energy'].append(ex_energy)
-                     tpa['Oscillator strength'].append(round(ex_osi,3))
+                     tpa['Oscillator strength'].append(round(ex_osi,4))
                      tpa['TPA cross section(sos)'].append(round(ex_cro_sos,2))
                      tpa['TPA cross section(dI)'].append(ex_cro_dI)
                      tpa['Transition dipole moment'].append(ex_transDip)
@@ -289,7 +290,7 @@ def read_tpa_adc1(path):
                      ex_transDip = es.transition_dipole(i+8,rl)
                      tpa["Excited state"].append(ex_num)
                      tpa['Excitation energy'].append(ex_energy)
-                     tpa['Oscillator strength'].append(round(ex_osi,3))
+                     tpa['Oscillator strength'].append(round(ex_osi,4))
                      tpa['TPA cross section(sos)'].append(round(ex_cro_sos,2))
                      tpa['Transition dipole moment'].append(ex_transDip)
                      tpa['dipole moment'].append(ex_dip)
@@ -786,7 +787,7 @@ def etpa_time(T_e,pd_tpa,considered_state,tot_states,polarization = "parallel",e
         #print(sig)
         sigma_entangled.append(sig)
     sigma_entangled = np.around(np.real(sigma_entangled),decimals=2)
-    print('finished the last one:',sigma_entangled[-1])
+    print('calculations on etpa [T_e] finished------------')
     return sigma_entangled
 
 def heatmap(data, row_labels, col_labels, ax=None,
@@ -873,7 +874,7 @@ def heatmap_IS(pd_tpa,tot_states):
     plt.show()
     #annotate_heatmap(im, valfmt="{x:d}", size=7, threshold=20,textcolors=("red", "white"))
 
-def exc_ladder(pd_iso,pd_sup,tot_states,s_iso,s_sup,title=" ",yval="Excitation energy",yticks = None,dominant=False):
+def exc_ladder(pd_iso,pd_sup,tot_states,s_iso,s_sup,title=" ",yval="Excitation energy",delta = False,yticks = None,dominant=False):
 #    fig, ax = plt.subplots() 
 #    plt.figure(figsize=(3,4.5))
     i= 0
@@ -908,8 +909,9 @@ def exc_ladder(pd_iso,pd_sup,tot_states,s_iso,s_sup,title=" ",yval="Excitation e
         y_min = min(min(y[0]),min(y[1]))
         y_max = max(max(y[0]),max(y[1]))
         center = (y_max+y_min)/2
-        delta = determine_delta(pd_iso,pd_sup,domi_iso,sigma_iso_is,domi_sup,sigma_sup_is,s_iso,s_sup)
-        plt.text(1.5,center, r"$\frac{\Delta}{\Delta'}=$"+str(delta),ha='center', va='center',size=14)
+        if delta:
+            delta = determine_delta(pd_iso,pd_sup,domi_iso,sigma_iso_is,domi_sup,sigma_sup_is,s_iso,s_sup)
+            plt.text(1.5,center, r"$\frac{\Delta}{\Delta'}=$"+str(delta),ha='center', va='center',size=14)      
         cbar = plt.colorbar(ticks=[min(sigma_sup_is),max(sigma_sup_is)])
         cbar.ax.set_yticklabels(['Low','High'])
     iso_label = r"$|f=$"+str(s_iso)+r"$\rangle_{free}$"
