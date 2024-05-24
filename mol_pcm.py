@@ -94,8 +94,9 @@ def plot_etpa_compare(T_e, pd_iso,pd_sup, s_iso, s_sup, tot_states,sigma_iso, si
 # Define parameters
 #root = os.getcwd()
 #path = "/home/fu/projects/scn/adc2"
-#path = "/home/fu/projects/TPA/sos_tpa/d2h_eth/keep_two_eth_v"
-path = "/home/fu/projects/TPA/sos_tpa/d2h_h2o/keep_two_h2o_v"
+path = "/home/fu/projects/scn/reference_20h2o/snap750_950/scn_qm"
+#path = "/home/fu/projects/scn/mixed_basis/snap200_1050/"
+#path = "/home/fu/projects/scn/adc2/benchmark/h2o-1-s"
 polarization = "parallel"
 T_e = np.arange(0,100.,0.05)
 #T_e = [5.2]
@@ -107,7 +108,7 @@ mol = "pp"
 #mol = "9a_4h2o"
 #mol = "9a_Dichloro"
 #mol = 'adc3'
-pd_iso = read_tpa(os.path.join(path,"AB_MP2"))
+pd_iso = read_tpa(os.path.join(path))
 #pd_sup = read_tpa(os.path.join(root,mol,'supp_dens'))#,correction=False)
 #pd_iso = read_tpa(os.path.join(root,mol,'suppostion_nonPrepol'))
 #pd_iso = read_tpa(os.path.join(root,mol,'frozen'))

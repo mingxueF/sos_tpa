@@ -82,7 +82,9 @@ def read_tpa(path):
     return:  dataframe with TPA-related info
     """
     tpa = {'Excited state':[],'Excitation energy':[],'Oscillator strength':[],'dipole moment':[],\
-           'Total dipole':[],'TPA cross section(sos)':[],'TPA cross section(dI)':[],"Transition dipole moment":[]}
+       'Total dipole':[],'TPA cross section(sos)':[],'TPA cross section(dI)':[],"Transition dipole moment":[],\
+       "Hole size":[],"Electron size":[],"Exciton size":[]}
+
     try:
         out = ccj.find_output(path)
     except AssertionError:
@@ -102,6 +104,9 @@ def read_tpa(path):
             tpa['TPA cross section(sos)'].append("-")
             tpa['TPA cross section(dI)'].append("-")
             tpa['Transition dipole moment'].append("-")
+            tpa["Hole size"].append("-")
+            tpa["Electron size"].append("-")
+            tpa["Exciton size"].append("-") 
             for i,line in enumerate(rl):        
                 matches = ["Excited state","[converged]"]
                 if all(match in line for match in matches):                #if "Excited state" in line:
@@ -144,8 +149,18 @@ def read_tpa(path):
                         tpa['Transition dipole moment'].append(ex_transDip)
                         tpa['dipole moment'].append("-")
                         tpa['Total dipole'].append("-")
+                        tpa["Hole size"].append("-")
+                        tpa["Electron size"].append("-")
+                        tpa["Exciton size"].append("-")
                     except IndexError:
                         pass
+                if "Exciton analysis of the transition density matrix" in line:
+                    dh = float(rl[i+6].split()[-1])
+                    de = float(rl[i+8].split()[-1])
+                    dexc = float(rl[i+10].split()[-1])
+                    tpa["Hole size"].append(dh)
+                    tpa["Electron size"].append(de)
+                    tpa["Exciton size"].append(dexc)
         pd_tpa = pd.DataFrame(tpa).set_index('Excited state')
         pd_tpa.to_csv(os.path.join(path,'tpa.csv'))
         print("Saved tpa.csv in File!")
