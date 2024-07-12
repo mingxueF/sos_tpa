@@ -75,7 +75,7 @@ def read_modes(path):
     return w,vec_align
         
 
-def read_tpa(path):
+def read_tpa(path, FDET=False):
     """
     input: the folder with the qchem output
     read:    ADC(2) TPA calulation
@@ -154,10 +154,17 @@ def read_tpa(path):
                         tpa["Exciton size"].append("-")
                     except IndexError:
                         pass
-                if "Exciton analysis of the transition density matrix" in line:
+                if "Exciton analysis of the transition density matrix" in line and FDET == True:
                     dh = float(rl[i+6].split()[-1])
                     de = float(rl[i+8].split()[-1])
                     dexc = float(rl[i+10].split()[-1])
+                    tpa["Hole size"].append(dh)
+                    tpa["Electron size"].append(de)
+                    tpa["Exciton size"].append(dexc)
+                if "Exciton analysis of the transition density matrix" in line and FDET == False:
+                    dh = float(rl[i+8].split()[-1])
+                    de = float(rl[i+10].split()[-1])
+                    dexc = float(rl[i+12].split()[-1])
                     tpa["Hole size"].append(dh)
                     tpa["Electron size"].append(de)
                     tpa["Exciton size"].append(dexc)

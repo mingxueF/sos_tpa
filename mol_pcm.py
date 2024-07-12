@@ -108,7 +108,7 @@ mol = "pp"
 #mol = "9a_4h2o"
 #mol = "9a_Dichloro"
 #mol = 'adc3'
-pd_iso = read_tpa(os.path.join(path))
+pd_iso = read_tpa(os.path.join(path),FDET=False)
 #pd_sup = read_tpa(os.path.join(root,mol,'supp_dens'))#,correction=False)
 #pd_iso = read_tpa(os.path.join(root,mol,'suppostion_nonPrepol'))
 #pd_iso = read_tpa(os.path.join(root,mol,'frozen'))
@@ -119,6 +119,14 @@ s_sup = 10
 #s_iso = 10
 #s_sup = 11
 tot_states =8
+# =============================================================================
+snaps = ["snap200_1050","snap200_1350","snap200_1650","snap750_950"]
+root = "/home/fu/projects/scn"
+for snap in snaps:
+    path = os.path.join(root, "reference_20h2o",snap,"cluster")
+    read_tpa(path, FDET=False)
+    path_fdet = os.path.join(root, "mixed_basis",snap,"supp_frozen")
+    read_tpa(path_fdet,FDET=True)
 # =============================================================================
 # get the dominant intermediate states
 #domi_iso = print_contributions(pd_iso,considered_state=s_iso, tot_states=tot_states)
